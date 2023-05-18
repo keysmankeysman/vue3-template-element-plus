@@ -1,92 +1,104 @@
-<script setup lang="ts">
-import { ref } from "vue";
-import { ElMessage } from "element-plus";
-
-defineProps<{ msg: string }>();
-
-const count = ref(0);
-const input = ref("element-plus");
-
-const curDate = ref("");
-
-const toast = () => {
-  ElMessage.success("Hello");
-};
-</script>
-
 <template>
-  <h1>{{ msg }}</h1>
-
-  <p>
-    See
-    <a href="https://element-plus.org" target="_blank">element-plus</a> for more
-    information.
-  </p>
-
-  <!-- example components -->
-  <div class="mb-4">
-    <el-button size="large" @click="toast">El Message</el-button>
-  </div>
-
-  <div class="my-2 text-center flex flex-wrap justify-center items-center">
-    <el-button @click="count++">count is: {{ count }}</el-button>
-    <el-button type="primary" @click="count++">count is: {{ count }}</el-button>
-    <el-button type="success" @click="count++">count is: {{ count }}</el-button>
-    <el-button type="warning" @click="count++">count is: {{ count }}</el-button>
-    <el-button type="danger" @click="count++">count is: {{ count }}</el-button>
-    <el-button type="info" @click="count++">count is: {{ count }}</el-button>
-  </div>
-
-  <div>
-    <el-tag type="success" class="m-1">Tag 1</el-tag>
-    <el-tag type="warning" class="m-1">Tag 1</el-tag>
-    <el-tag type="danger" class="m-1">Tag 1</el-tag>
-    <el-tag type="info" class="m-1">Tag 1</el-tag>
-  </div>
-
-  <div class="my-2">
-    <el-input class="m-2" v-model="input" style="width: 200px" />
-    <el-date-picker
-      class="m-2"
-      v-model="curDate"
-      type="date"
-      placeholder="Pick a day"
-    ></el-date-picker>
-  </div>
-
-  <p>For example, we can custom primary color to 'green'.</p>
-
-  <p>
-    Edit
-    <code>components/HelloWorld.vue</code> to test components.
-  </p>
-  <p>
-    Edit
-    <code>styles/element/var.scss</code> to test scss variables.
-  </p>
-
-  <p>
-    Full Example:
-    <a
-      href="https://github.com/element-plus/element-plus-vite-starter"
-      target="_blank"
-      >element-plus-vite-starter</a
-    >
-    | On demand Example:
-    <a
-      href="https://github.com/element-plus/unplugin-element-plus"
-      target="_blank"
-      >unplugin-element-plus/examples/vite</a
-    >
-  </p>
+  <el-form
+    ref="ruleFormRef"
+    :model="ruleForm"
+    status-icon
+    :rules="rules"
+    label-width="120px"
+    class="demo-ruleForm"
+  >
+    <el-form-item label="Password" prop="pass">
+      <el-input v-model="ruleForm.pass" type="password" autocomplete="off" />
+    </el-form-item>
+    <el-form-item label="Confirm" prop="checkPass">
+      <el-input
+        v-model="ruleForm.checkPass"
+        type="password"
+        autocomplete="off"
+      />
+    </el-form-item>
+    <el-form-item label="Age" prop="age">
+      <el-input v-model.number="ruleForm.age" />
+    </el-form-item>
+    <el-form-item>
+      <el-button type="primary" @click="submitForm(ruleFormRef)"
+        >Submit</el-button
+      >
+      <el-button @click="resetForm(ruleFormRef)">Reset</el-button>
+    </el-form-item>
+  </el-form>
 </template>
 
-<style>
-.ep-button {
-  margin: 4px;
+<script lang="ts" setup>
+import { reactive, ref } from 'vue'
+import type { FormInstance, FormRules } from 'element-plus'
+
+const ruleFormRef = ref<FormInstance>()
+
+const checkAge = (rule: any, value: any, callback: any) => {
+  if (!value) {
+    return callback(new Error('Please input the age'))
+  }
+  setTimeout(() => {
+    if (!Number.isInteger(value)) {
+      callback(new Error('Please input digits'))
+    } else {
+      if (value < 18) {
+        callback(new Error('Age must be greater than 18'))
+      } else {
+        callback()
+      }
+    }
+  }, 1000)
 }
-.ep-button + .ep-button {
-  margin-left: 0;
-  margin: 4px;
+
+const validatePass = (rule: any, value: any, callback: any) => {
+  if (value === '') {
+    callback(new Error('Please input the password'))
+  } else {
+    if (ruleForm.checkPass !== '') {
+      if (!ruleFormRef.value) return
+      ruleFormRef.value.validateField('checkPass', () => null)
+    }
+    callback()
+  }
 }
-</style>
+const validatePass2 = (rule: any, value: any, callback: any) => {
+  if (value === '') {
+    callback(new Error('Please input the password again'))
+  } else if (value !== ruleForm.pass) {
+    callback(new Error("Two inputs don't match!"))
+  } else {
+    callback()
+  }
+}
+
+const ruleForm = reactive({
+  pass: '',
+  checkPass: '',
+  age: '',
+})
+
+const rules = reactive<FormRules>({
+  pass: [{ validator: validatePass, trigger: 'blur' }],
+  checkPass: [{ validator: validatePass2, trigger: 'blur' }],
+  age: [{ validator: checkAge, trigger: 'blur' }],
+})
+
+const submitForm = (formEl: FormInstance | undefined) => {
+  if (!formEl) return
+  formEl.validate((valid) => {
+    if (valid) {
+      console.log('submit!')
+    } else {
+      console.log('error submit!')
+      return false
+    }
+  })
+}
+
+const resetForm = (formEl: FormInstance | undefined) => {
+  if (!formEl) return
+  formEl.resetFields()
+}
+</script>
